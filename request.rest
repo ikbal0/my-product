@@ -1,0 +1,12 @@
+POST http://localhost:8080/user/signin
+Content-Type: application/json
+
+{
+    "email": "dimas3@gmail.com",
+    "password": "dimasdimas"
+}
+
+###
+
+GET http://localhost:8080/product
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiZGltYXMiLCJlbWFpbCI6ImRpbWFzM0BnbWFpbC5jb20iLCJnZW5kZXIiOiJtYWxlIiwiaWF0IjoxNjY5MTc1ODI4fQ.eq2TkS08LgxI9smLo8euRlRkbp1p0wl1UlfLYtNa-Vs
