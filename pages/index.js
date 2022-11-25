@@ -1,8 +1,8 @@
 import { useFormik } from 'formik'
 import Head from 'next/head'
-import Image from 'next/image'
 import { useRouter } from 'next/router'
 import { useEffect, useState } from 'react'
+import ProductModal from '../lib/modal/product'
 import styles from '../styles/Home.module.css'
 
 export default function Home() {
@@ -10,54 +10,53 @@ export default function Home() {
 
   const [data, setData] = useState(null)
   const [dataProduct, setDataProduct] = useState(null)
-  const [isLoading, setLoading] = useState(false)
   const [isCollapse, setCollapse] = useState(false)
 
   useEffect(() => {
-    // setLoading(true)
-    let isCancelled = false;
     const endpoint = 'http://localhost:8080/user/';
-
     const options = {
-      method: 'GET', // *GET, POST, PUT, DELETE, etc.
-      credentials: 'same-origin', // include, *same-origin, omit
+      method: 'GET',
+      credentials: 'same-origin',
       headers: {
         'Content-Type': 'application/json',
-        // 'Authorization': `Bearer ${document.cookie}`
         'Authorization': `Bearer ${document.cookie.split('; ').find((row) => row.startsWith('token='))?.split('=')[1]}`
-        // 'Content-Type': 'application/x-www-form-urlencoded',
       },
     }
 
-    const getUser = async () => {
-      try {
-        const response = await fetch(endpoint, options)
-        const result = await response.json()
+    fetch(endpoint, options)
+      .then((response) => response.json())
+      .then((result) => {
         if(result.message === "forbidden"){
           router.push('/signin')
         } else {
           setData(result)
           handleProductFetch()
         }
-      } catch (err) {
-        console.error(err)
-      }
+      }).catch(err => {
+        return <p>Something wrong {err}</p>
+      })
+  },[])
+
+  async function handleProductFetch() {
+    const endpoint = 'http://localhost:8080/product/';
+
+    const options = {
+      method: 'GET', // *GET, POST, PUT, DELETE, etc.
+      credentials: 'same-origin', // include, *same-origin, omit
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${document.cookie.split('; ').find((row) => row.startsWith('token='))?.split('=')[1]}`
+      },
     }
 
-
-    if (!isCancelled){
-      getUser()
-      setLoading(false)
-    }
-
-    return () => {
-      isCancelled = true;
-    }
-
-  })
-
-  if (isLoading) return <p>Loading...</p>
-  if (!data) return <p>Loading...</p>
+    fetch(endpoint, options)
+    .then((response) => response.json())
+    .then((result) => {
+      setDataProduct(result)
+    }).catch(err => {
+      return <p>Something wrong {err}</p>
+    })
+  }
 
   function InputCollapse() {
     const formik = useFormik({
@@ -76,27 +75,22 @@ export default function Home() {
   
       const jData = JSON.stringify(values)
   
-      // Form the request for sending data to the server.
       const options = {
-        method: 'POST', // *GET, POST, PUT, DELETE, etc.
-        mode: 'cors', // no-cors, *cors, same-origin
-        cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
-        credentials: 'same-origin', // include, *same-origin, omit
+        method: 'POST', 
+        mode: 'cors',
+        cache: 'no-cache',
+        credentials: 'same-origin',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${document.cookie.split('; ').find((row) => row.startsWith('token='))?.split('=')[1]}`
-          // 'Content-Type': 'application/x-www-form-urlencoded',
         },
-        redirect: 'follow', // manual, *follow, error
-        referrerPolicy: 'no-referrer', // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
-        body: jData // body data type must match "Content-Type"
+        redirect: 'follow',
+        referrerPolicy: 'no-referrer', 
+        body: jData 
       }
   
-      // Send the form data to our forms API on Vercel and get a response.
       const response = await fetch(endpoint, options);
   
-      // Get the response data from server as JSON.
-      // If server returns the name submitted, that means the form works.
       const result = await response.json();
       if(result){
         if(result.message !== 'success'){
@@ -106,14 +100,13 @@ export default function Home() {
           handleProductFetch()
         }
       }
-      // alert(`user with following id: ${result.insertedId} has inserted!`)
     }
 
     return <>
     {/* Input Product */}
 
     <button className="btn btn-primary" onClick={() => setCollapse(!isCollapse)} type="button" data-bs-toggle="collapse" data-bs-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
-      Input
+    {isCollapse ? "Close" : "Add Product"}
     </button>
     <br/>
     <div className={isCollapse ? "" : "collapse"} id="collapseExample">
@@ -181,53 +174,46 @@ export default function Home() {
   }
 
   function ProductTable() {
+    // const [idProduct, setIdProduct] = useState(null)
+
     if (!dataProduct) {
-      return <p>Loading</p>
+      return <p>Loading...</p>
     } else {
-      return <table className="table">
-        <thead>
-          <tr>
-            <th scope="col">Name</th>
-            <th scope="col">Quantity</th>
-            <th scope="col">Price</th>
-            <th scope="col">Description</th>
-          </tr>
-        </thead>
-        <tbody>{ dataProduct.map((f) => {
-          return<tr key={f._id}>
-            <td>{f.name}</td>
-            <td>{f.price}</td>
-            <td>{f.quantity}</td>
-            <td>{f.description}</td>
-          </tr>
-          })
-        }
-        </tbody>
-      </table>
+      return <>
+        <table className="table">
+          <thead>
+            <tr>
+              <th scope="col">Name</th>
+              <th scope="col">Quantity</th>
+              <th scope="col">Price</th>
+              <th scope="col">Description</th>
+              <th scope="col">Action</th>
+            </tr>
+          </thead>
+          <tbody>{ dataProduct.map((f) => {
+            return<tr key={f._id}>
+              <td>{f.name}</td>
+              <td>{f.price}</td>
+              <td>{f.quantity}</td>
+              <td>{f.description}</td>
+              <td>
+                <ProductModal dataProduct={f} fetchProduct={handleProductFetch}/>
+              </td>
+            </tr>
+            })
+          }
+          </tbody>
+        </table>
+      </>
     }
-  } 
+  }
 
-  async function handleProductFetch() {
-    const endpoint = 'http://localhost:8080/product/';
-
-    // Form the request for sending data to the server.
-    const options = {
-      method: 'GET', // *GET, POST, PUT, DELETE, etc.
-      credentials: 'same-origin', // include, *same-origin, omit
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${document.cookie.split('; ').find((row) => row.startsWith('token='))?.split('=')[1]}`
-        // 'Content-Type': 'application/x-www-form-urlencoded',
-      },
+  function ProfileData() {
+    if (!data) {
+      return <p>Loading...</p>
+    } else {
+      return <h3>{data.name}</h3>
     }
-
-    fetch(endpoint, options)
-    .then((response) => response.json())
-    .then((result) => {
-      setDataProduct(result)
-    }).catch(err => {
-      return <p>Something wrong {err}</p>
-    })
   }
 
   return (
@@ -251,7 +237,7 @@ export default function Home() {
         <div className="col-sm-4">
           <div className='card' style={{'marginTop': '30px', 'paddingTop': '20px'}}>
             <div className='container'>
-              <h3>{data.name}</h3>
+              <ProfileData/>
             </div>
           </div>
         </div>
